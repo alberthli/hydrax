@@ -4,7 +4,7 @@ from typing import Dict, Sequence
 import jax
 import jax.numpy as jnp
 import mujoco
-from mujoco import mjx
+from mujoco import MjData, MjModel, mjx
 
 
 class Task(ABC):
@@ -134,3 +134,17 @@ class Task(ABC):
             A dictionary of randomized data elements.
         """
         return {}
+
+    def post_step(self, mj_model: MjModel, mj_data: MjData) -> None:
+        """A hook for post-step processing after each simulation step.
+
+        This method is called after each simulation step, and can be used to
+        update the task state or perform any other necessary operations.
+
+        By default, does nothing.
+
+        Args:
+            mj_model: The MuJoCo model.
+            mj_data: The MuJoCo data object.
+        """
+        return None
