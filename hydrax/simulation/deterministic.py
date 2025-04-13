@@ -57,8 +57,8 @@ def run_interactive(  # noqa: PLR0912, PLR0915
     # Report the planning horizon in seconds for debugging
     print(
         f"Planning with {controller.ctrl_steps} steps "
-        f"over a {controller.plan_horizon} "
-        f"second horizon."
+        f"over a {controller.plan_horizon} second horizon "
+        f"with {controller.num_knots} knots."
     )
 
     # Figure out how many sim steps to run before replanning
@@ -199,7 +199,6 @@ def run_interactive(  # noqa: PLR0912, PLR0915
             for i in range(sim_steps_per_replan):
                 mj_data.ctrl[:] = np.array(us[i])
                 mujoco.mj_step(mj_model, mj_data)
-                controller.task.post_step(mj_model, mj_data)
                 viewer.sync()
 
             # Try to run in roughly realtime
