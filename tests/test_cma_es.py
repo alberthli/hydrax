@@ -36,7 +36,7 @@ def test_cmaes() -> None:
     # Roll out the control sequences
     state = mjx.make_data(task.model)
     _, rollouts = ctrl.eval_rollouts(task.model, state, controls, knots)
-    assert rollouts.costs.shape == (32, ctrl.ctrl_steps + 1)
+    assert rollouts.costs.shape == (1, 32, ctrl.ctrl_steps + 1)
 
     # Update the policy parameters
     params = ctrl.update_params(params, rollouts)

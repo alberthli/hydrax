@@ -38,6 +38,7 @@ def test_predictive_sampling() -> None:
     _, rollouts = opt.eval_rollouts(task.model, state, controls, knots)
 
     assert rollouts.costs.shape == (
+        opt.num_randomizations,
         opt.num_samples,
         opt.ctrl_steps + 1,
     )
@@ -87,7 +88,8 @@ def test_open_loop() -> None:
         params, rollouts = jit_opt(state, params)
 
     # Pick the best rollout (first axis is for domain randomization, unused)
-    total_costs = jnp.sum(rollouts.costs, axis=1)
+    reduced_costs = opt.risk_strategy.combine_costs(rollouts.costs)
+    total_costs = jnp.sum(reduced_costs, axis=-1)  # sum over time steps
     best_idx = jnp.argmin(total_costs)
     best_ctrl = rollouts.controls[best_idx]
     best_knots = rollouts.knots[best_idx]

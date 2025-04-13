@@ -120,7 +120,10 @@ class Evosax(SamplingBasedController):
         self, params: EvosaxParams, rollouts: Trajectory
     ) -> EvosaxParams:
         """Update the policy parameters based on the rollouts."""
-        costs = jnp.sum(rollouts.costs, axis=1)  # sum over time steps
+        # Combine the costs from different domain randomizations using the
+        # specified risk strategy.
+        reduced_costs = self.risk_strategy.combine_costs(rollouts.costs)
+        costs = jnp.sum(reduced_costs, axis=-1)  # sum over time steps
         x = jnp.reshape(rollouts.knots, (self.strategy.popsize, -1))
         opt_state = self.strategy.tell(
             x, costs, params.opt_state, self.es_params

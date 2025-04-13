@@ -92,7 +92,10 @@ class MPPI(SamplingBasedController):
         self, params: MPPIParams, rollouts: Trajectory
     ) -> MPPIParams:
         """Update the mean with an exponentially weighted average."""
-        costs = jnp.sum(rollouts.costs, axis=1)  # sum over time steps
+        # Combine the costs from different domain randomizations using the
+        # specified risk strategy.
+        reduced_costs = self.risk_strategy.combine_costs(rollouts.costs)
+        costs = jnp.sum(reduced_costs, axis=-1)  # sum over time steps
         # N.B. jax.nn.softmax takes care of details like baseline subtraction.
         weights = jax.nn.softmax(-costs / self.temperature, axis=0)
         mean = jnp.sum(weights[:, None, None] * rollouts.knots, axis=0)

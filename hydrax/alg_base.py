@@ -19,14 +19,20 @@ class Trajectory:
     Attributes:
         controls: Control actions of shape (num_rollouts, H, nu).
         knots: Control spline knots of shape (num_rollouts, num_knots, nu).
-        costs: Costs of shape (num_rollouts, H+1).
+        costs: Costs of shape (num_randomizations, num_rollouts, H+1).
+            We expect this to be reduced in the controller by a risk strategy.
         trace_sites: Positions of trace sites of shape (num_rollouts, H+1, 3).
+        x0: Initial state of shape (nq + nv,). NOT required for the controller.
+        mocap0: Initial mocap positions and quaternions. Not required for the
+            controller. Shape=(num_randomizations, num_rollouts, num_mocap, 7).
     """
 
     controls: jax.Array
     knots: jax.Array
     costs: jax.Array
     trace_sites: jax.Array
+    x0: jax.Array
+    mocap0: jax.Array
 
     def __len__(self):
         """Return the number of time steps in the trajectory (T)."""
@@ -166,8 +172,9 @@ class SamplingBasedController(ABC):
             rng: The random number generator key for randomizing initial states.
 
         Returns:
-            A Trajectory object containing the control, costs, and trace sites.
-            Costs are aggregated over domains using the given risk strategy.
+            rollouts: A Trajectory object containing the control, costs, and
+                trace sites. Costs are aggregated over domains using the given
+                risk strategy.
         """
         # Set the initial state for each rollout.
         states = jax.vmap(lambda _, x: x, in_axes=(0, None))(
@@ -188,18 +195,27 @@ class SamplingBasedController(ABC):
 
         # Apply the control sequences, parallelized over both rollouts and
         # domain randomizations.
-        _, rollouts = jax.vmap(
+        rollout_data, rollouts = jax.vmap(
             self.eval_rollouts, in_axes=(self.randomized_axes, 0, None, None)
         )(self.model, states, controls, knots)
 
-        # Combine the costs from different domain randomizations using the
-        # specified risk strategy.
-        costs = self.risk_strategy.combine_costs(rollouts.costs)
+        # extra rollout data that might be useful in the future
+        x0 = jnp.concatenate([state.qpos, state.qvel])  # (nq + nv,)
+        mocap0 = jnp.concatenate(
+            [state.mocap_pos, state.mocap_quat], axis=-1
+        )  # (num_randomizations, num_rollouts, num_mocap, 7)
+
+        # data strictly necessary for running the stack
         controls = rollouts.controls[0]  # identical over randomizations
         knots = rollouts.knots[0]  # identical over randomizations
         trace_sites = rollouts.trace_sites[0]  # visualization only, take 1st
         return rollouts.replace(
-            costs=costs, controls=controls, knots=knots, trace_sites=trace_sites
+            costs=rollouts.costs,  # (num_randomizations, num_rollouts, H+1)
+            controls=controls,  # (num_rollouts, H, nu)
+            knots=knots,  # (num_rollouts, num_knots, nu)
+            trace_sites=trace_sites,  # (num_rollouts, H+1, 3)
+            x0=x0,  # (nq + nv,)
+            mocap0=mocap0,  # (num_mocap, 7)
         )
 
     @partial(jax.vmap, in_axes=(None, None, None, 0, 0))
@@ -242,11 +258,20 @@ class SamplingBasedController(ABC):
         costs = jnp.append(costs, final_cost)
         trace_sites = jnp.append(trace_sites, final_trace_sites[None], axis=0)
 
+        # NOT required for the controller
+        # TODO: consider bagging out the x trajectory too
+        x0 = jnp.concatenate([state.qpos, state.qvel])  # (nq + nv,)
+        mocap0 = jnp.concatenate(
+            [state.mocap_pos, state.mocap_quat], axis=-1
+        )  # (num_mocap, 7)
+
         return states, Trajectory(
             controls=controls,
             knots=knots,
             costs=costs,
             trace_sites=trace_sites,
+            x0=x0,
+            mocap0=mocap0,
         )
 
     def init_params(self, seed: int = 0) -> Any:
