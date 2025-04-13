@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Any, Dict
 
 import jax
 import jax.numpy as jnp
@@ -45,7 +45,9 @@ class PushT(Task):
         pusher_pos = state.qpos[3:] + jnp.array([0.0, 0.1])  # y bias
         return block_pos - pusher_pos
 
-    def running_cost(self, state: mjx.Data, control: jax.Array) -> jax.Array:
+    def running_cost(
+        self, state: mjx.Data, control: jax.Array, params: Any
+    ) -> jax.Array:
         """The running cost ℓ(xₜ, uₜ)."""
         position_err = self._get_position_err(state)
         orientation_err = self._get_orientation_err(state)
@@ -57,7 +59,7 @@ class PushT(Task):
 
         return position_cost + orientation_cost + 0.01 * close_to_block_cost
 
-    def terminal_cost(self, state: mjx.Data) -> jax.Array:
+    def terminal_cost(self, state: mjx.Data, params: Any) -> jax.Array:
         """The terminal cost ℓ_T(x_T)."""
         return self.running_cost(state, jnp.zeros(self.model.nu))
 

@@ -1,3 +1,5 @@
+from typing import Any
+
 import jax
 import jax.numpy as jnp
 import mujoco
@@ -48,13 +50,15 @@ class Walker(Task):
         sensor_adr = self.model.sensor_adr[self.torso_zaxis_sensor]
         return state.sensordata[sensor_adr + 2] - 1.0
 
-    def running_cost(self, state: mjx.Data, control: jax.Array) -> jax.Array:
+    def running_cost(
+        self, state: mjx.Data, control: jax.Array, params: Any
+    ) -> jax.Array:
         """The running cost ℓ(xₜ, uₜ)."""
         state_cost = self.terminal_cost(state)
         control_cost = jnp.sum(jnp.square(control))
         return state_cost + 0.1 * control_cost
 
-    def terminal_cost(self, state: mjx.Data) -> jax.Array:
+    def terminal_cost(self, state: mjx.Data, params: Any) -> jax.Array:
         """The terminal cost ϕ(x_T)."""
         height_cost = jnp.square(
             self._get_torso_height(state) - self.target_height

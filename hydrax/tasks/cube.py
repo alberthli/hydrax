@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Any, Dict
 
 import jax
 import jax.numpy as jnp
@@ -45,7 +45,9 @@ class CubeRotation(Task):
         goal_quat = jnp.array([1.0, 0.0, 0.0, 0.0])
         return mjx._src.math.quat_sub(cube_quat, goal_quat)
 
-    def running_cost(self, state: mjx.Data, control: jax.Array) -> jax.Array:
+    def running_cost(
+        self, state: mjx.Data, control: jax.Array, params: Any
+    ) -> jax.Array:
         """The running cost ℓ(xₜ, uₜ)."""
         position_err = self._get_cube_position_err(state)
         squared_distance = jnp.sum(jnp.square(position_err[0:2]))  # ignore z
@@ -60,7 +62,7 @@ class CubeRotation(Task):
 
         return position_cost + orientation_cost + grasp_cost
 
-    def terminal_cost(self, state: mjx.Data) -> jax.Array:
+    def terminal_cost(self, state: mjx.Data, params: Any) -> jax.Array:
         """The terminal cost ϕ(x_T)."""
         position_err = self._get_cube_position_err(state)
         return 100 * jnp.sum(jnp.square(position_err))

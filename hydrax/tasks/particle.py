@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Any, Dict
 
 import jax
 import jax.numpy as jnp
@@ -20,13 +20,15 @@ class Particle(Task):
         super().__init__(mj_model, trace_sites=["pointmass"])
         self.pointmass_id = mj_model.site("pointmass").id
 
-    def running_cost(self, state: mjx.Data, control: jax.Array) -> jax.Array:
+    def running_cost(
+        self, state: mjx.Data, control: jax.Array, params: Any
+    ) -> jax.Array:
         """The running cost ℓ(xₜ, uₜ) encourages target tracking."""
         state_cost = self.terminal_cost(state)
         control_cost = jnp.sum(jnp.square(control))
         return state_cost + 0.1 * control_cost
 
-    def terminal_cost(self, state: mjx.Data) -> jax.Array:
+    def terminal_cost(self, state: mjx.Data, params: Any) -> jax.Array:
         """The terminal cost ϕ(x_T)."""
         position_cost = jnp.sum(
             jnp.square(state.site_xpos[self.pointmass_id] - state.mocap_pos[0])

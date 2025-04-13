@@ -1,3 +1,5 @@
+from typing import Any
+
 import jax
 import jax.numpy as jnp
 import mujoco
@@ -23,7 +25,9 @@ class Pendulum(Task):
         theta_err = jnp.array([jnp.cos(theta) - 1, jnp.sin(theta)])
         return jnp.sum(jnp.square(theta_err))
 
-    def running_cost(self, state: mjx.Data, control: jax.Array) -> jax.Array:
+    def running_cost(
+        self, state: mjx.Data, control: jax.Array, params: Any
+    ) -> jax.Array:
         """The running cost ℓ(xₜ, uₜ)."""
         theta_cost = self._distance_to_upright(state)
         theta_dot_cost = 0.01 * jnp.square(state.qvel[0])
@@ -31,7 +35,7 @@ class Pendulum(Task):
         total_cost = theta_cost + theta_dot_cost + control_cost
         return total_cost
 
-    def terminal_cost(self, state: mjx.Data) -> jax.Array:
+    def terminal_cost(self, state: mjx.Data, params: Any) -> jax.Array:
         """The terminal cost ϕ(x_T)."""
         theta_cost = self._distance_to_upright(state)
         theta_dot_cost = 0.01 * jnp.square(state.qvel[0])

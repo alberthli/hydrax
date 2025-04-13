@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Any, Dict
 
 import jax
 import jax.numpy as jnp
@@ -59,7 +59,9 @@ class HumanoidMocap(Task):
         i = jnp.clip(i, 0, self.reference.shape[0] - 1)
         return self.reference[i, :]
 
-    def running_cost(self, state: mjx.Data, control: jax.Array) -> jax.Array:
+    def running_cost(
+        self, state: mjx.Data, control: jax.Array, params: Any
+    ) -> jax.Array:
         """The running cost ℓ(xₜ, uₜ)."""
         # Configuration error weighs the base pose more heavily
         q_ref = self._get_reference_configuration(state.time)
@@ -74,7 +76,7 @@ class HumanoidMocap(Task):
 
         return 1.0 * configuration_cost + 1.0 * control_cost
 
-    def terminal_cost(self, state: mjx.Data) -> jax.Array:
+    def terminal_cost(self, state: mjx.Data, params: Any) -> jax.Array:
         """The terminal cost ϕ(x_T)."""
         q_ref = self._get_reference_configuration(state.time)
         q = state.qpos

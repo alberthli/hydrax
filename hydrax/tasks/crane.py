@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Any, Dict
 
 import jax
 import jax.numpy as jnp
@@ -39,7 +39,9 @@ class Crane(Task):
             self.payload_vel_sensor_adr : self.payload_vel_sensor_adr + 3
         ]
 
-    def running_cost(self, state: mjx.Data, control: jax.Array) -> jax.Array:
+    def running_cost(
+        self, state: mjx.Data, control: jax.Array, params: Any
+    ) -> jax.Array:
         """The running cost ℓ(xₜ, uₜ) encourages payload tracking."""
         # Get the position and velocity of the payload relative to the target
         payload_pos = self._get_payload_position(state)
@@ -50,7 +52,7 @@ class Crane(Task):
         velocity_cost = jnp.sum(jnp.square(payload_vel))
         return position_cost + 0.1 * velocity_cost
 
-    def terminal_cost(self, state: mjx.Data) -> jax.Array:
+    def terminal_cost(self, state: mjx.Data, params: Any) -> jax.Array:
         """Terminal cost is the same as running cost."""
         return self.running_cost(state, jnp.zeros(self.model.nu))
 

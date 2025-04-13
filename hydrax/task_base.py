@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Sequence
+from typing import Any, Dict, Sequence
 
 import jax
 import jax.numpy as jnp
@@ -59,29 +59,31 @@ class Task(ABC):
         )
 
     @abstractmethod
-    def running_cost(self, state: mjx.Data, control: jax.Array) -> jax.Array:
+    def running_cost(
+        self, state: mjx.Data, control: jax.Array, params: Any
+    ) -> jax.Array:
         """The running cost ℓ(xₜ, uₜ).
 
         Args:
             state: The current state xₜ.
             control: The control action uₜ.
+            params: The policy params.
 
         Returns:
             The scalar running cost ℓ(xₜ, uₜ)
         """
-        pass
 
     @abstractmethod
-    def terminal_cost(self, state: mjx.Data) -> jax.Array:
+    def terminal_cost(self, state: mjx.Data, params: Any) -> jax.Array:
         """The terminal cost ϕ(x_T).
 
         Args:
             state: The final state x_T.
+            params: The policy params.
 
         Returns:
             The scalar terminal cost ϕ(x_T).
         """
-        pass
 
     def get_trace_sites(self, state: mjx.Data) -> jax.Array:
         """Get the positions of the trace sites at the current time step.

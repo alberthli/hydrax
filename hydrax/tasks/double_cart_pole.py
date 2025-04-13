@@ -1,3 +1,5 @@
+from typing import Any
+
 import jax
 import jax.numpy as jnp
 import mujoco
@@ -25,14 +27,16 @@ class DoubleCartPole(Task):
         cart_x = state.qpos[0]
         return jnp.square(tip_z - 4.0) + jnp.square(tip_x - cart_x)
 
-    def running_cost(self, state: mjx.Data, control: jax.Array) -> jax.Array:
+    def running_cost(
+        self, state: mjx.Data, control: jax.Array, params: Any
+    ) -> jax.Array:
         """The running cost ℓ(xₜ, uₜ)."""
         upright_cost = self._distance_to_upright(state)
         velocity_cost = 0.1 * jnp.sum(jnp.square(state.qvel[1:]))
         control_cost = 0.001 * jnp.sum(jnp.square(control))
         return upright_cost + velocity_cost + control_cost
 
-    def terminal_cost(self, state: mjx.Data) -> jax.Array:
+    def terminal_cost(self, state: mjx.Data, params: Any) -> jax.Array:
         """The terminal cost ϕ(x_T)."""
         upright_cost = 10 * self._distance_to_upright(state)
         centering_cost = 10 * jnp.square(state.qpos[0])
