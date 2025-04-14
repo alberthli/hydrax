@@ -1,15 +1,14 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import Any, Dict, Sequence
 
+import equinox as eqx
 import jax
 import jax.numpy as jnp
 import mujoco
 from mujoco import MjData, MjModel, mjx
 
 
-@dataclass
-class CostMetadata:
+class CostMetadata(eqx.Module):
     """Metadata for the cost function."""
 
 
