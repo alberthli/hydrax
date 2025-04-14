@@ -125,6 +125,7 @@ def run_controller(
     # Jit the optimizer step, then signal that we're ready to go
     print("Jitting controller...")
     st = time.time()
+    ctrl.task.pre_optimize(mjx_data, policy_params)
     jit_optimize = jax.jit(
         lambda d, p: ctrl.optimize(d, p)[0], donate_argnums=(1,)
     )

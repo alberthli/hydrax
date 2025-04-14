@@ -137,6 +137,10 @@ class Task(ABC):
         """
         return {}
 
+    def pre_optimize(self, state: mjx.Data, params: Any) -> None:
+        """Hook for pre-optimization processing."""
+        return None
+
     def post_step(self, mj_model: MjModel, mj_data: MjData) -> None:
         """A hook for post-step processing after each simulation step.
 

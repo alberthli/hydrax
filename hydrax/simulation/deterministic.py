@@ -150,6 +150,7 @@ def run_interactive(  # noqa: PLR0912, PLR0915
 
             # Do a replanning step
             plan_start = time.time()
+            controller.task.pre_optimize(mjx_data, policy_params)
             policy_params, rollouts = jit_optimize(mjx_data, policy_params)
             plan_time = time.time() - plan_start
 
