@@ -30,6 +30,8 @@ class PredictiveSampling(SamplingBasedController):
         task: Task,
         num_samples: int,
         noise_level: float,
+        use_noise_ramp: bool = False,
+        noise_ramp: bool = 4.0,
         num_randomizations: int = 1,
         risk_strategy: RiskStrategy = None,
         seed: int = 0,
@@ -42,14 +44,17 @@ class PredictiveSampling(SamplingBasedController):
         Args:
             task: The dynamics and cost for the system we want to control.
             num_samples: The number of control tapes to sample.
-            noise_level: The scale of Gaussian noise to add to sampled controls.
+            noise_level: The scale of Gaussian noise to add to sampled controls
+                If using noise ramp, this is the max value.
+            use_noise_ramp: Whether to use a noise ramp for the covariance.
+            noise_ramp: The maximum value of the noise ramp.
             num_randomizations: The number of domain randomizations to use.
             risk_strategy: How to combining costs from different randomizations.
-                           Defaults to average cost.
+                Defaults to average cost.
             seed: The random seed for domain randomization.
             plan_horizon: The time horizon for the rollout in seconds.
             spline_type: The type of spline used for control interpolation.
-                         Defaults to "zero" (zero-order hold).
+                Defaults to "zero" (zero-order hold).
             num_knots: The number of knots in the control spline.
         """
         super().__init__(
@@ -63,6 +68,8 @@ class PredictiveSampling(SamplingBasedController):
         )
         self.noise_level = noise_level
         self.num_samples = num_samples
+        self.use_noise_ramp = use_noise_ramp
+        self.noise_ramp = noise_ramp
 
     def init_params(self, seed: int = 0) -> PSParams:
         """Initialize the policy parameters."""
@@ -80,11 +87,22 @@ class PredictiveSampling(SamplingBasedController):
                 self.task.model.nu,
             ),
         )
-        controls = params.mean + self.noise_level * noise
+
+        # apply noise ramping or simply scaling by the noise_level
+        ramp = jnp.linspace(
+            1.0,
+            self.noise_ramp,
+            self.num_knots,
+        )[None, :, None]
+        noise = jnp.where(
+            self.use_noise_ramp,
+            self.noise_level * noise * ramp,
+            self.noise_level * noise,
+        )
 
         # The original mean of the distribution is included as a sample
+        controls = params.mean + noise
         controls = controls.at[0].set(params.mean)
-
         return controls, params.replace(rng=rng)
 
     def update_params(self, params: PSParams, rollouts: Trajectory) -> PSParams:

@@ -53,7 +53,7 @@ elif args.algorithm == "cem":
         task,
         num_samples=128,
         num_elites=3,
-        sigma_start=0.5,
+        sigma_max=0.5,
         sigma_min=0.1,
         spline_type="cubic",
         plan_horizon=1.0,

@@ -15,7 +15,7 @@ def test_open_loop() -> None:
         task,
         num_samples=32,
         num_elites=4,
-        sigma_start=1.0,
+        sigma_max=1.0,
         sigma_min=0.1,
         plan_horizon=1.0,
         spline_type="zero",

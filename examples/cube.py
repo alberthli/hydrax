@@ -35,36 +35,42 @@ if args.algorithm == "ps" or args.algorithm is None:
     print("Running predictive sampling")
     ctrl = PredictiveSampling(
         task,
-        num_samples=32,
-        noise_level=0.2,
-        num_randomizations=32,
-        plan_horizon=0.25,
-        spline_type="zero",
+        num_samples=120,
+        noise_level=0.1,  # tune this
+        use_noise_ramp=True,
+        noise_ramp=4.0,
+        num_randomizations=1,
+        plan_horizon=0.5,
+        spline_type="cubic",
         num_knots=4,
     )
 elif args.algorithm == "mppi":
     print("Running MPPI")
-    ctrl = MPPI(
+    ctrl = MPPI(  # fix noise ramping
         task,
-        num_samples=128,
-        noise_level=0.2,
-        temperature=0.001,
-        num_randomizations=8,
-        plan_horizon=0.25,
-        spline_type="zero",
+        num_samples=120,
+        noise_level=0.1,
+        temperature=0.01,
+        use_noise_ramp=True,
+        noise_ramp=4.0,
+        num_randomizations=1,
+        plan_horizon=0.5,
+        spline_type="cubic",
         num_knots=4,
     )
 elif args.algorithm == "cem":
     print("Running CEM")
     ctrl = CEM(
         task,
-        num_samples=128,
-        num_elites=5,
-        sigma_start=0.5,
-        sigma_min=0.5,
-        num_randomizations=8,
-        plan_horizon=0.25,
-        spline_type="zero",
+        num_samples=120,
+        num_elites=3,
+        sigma_max=0.5,
+        sigma_min=0.01,
+        use_noise_ramp=True,
+        noise_ramp=4.0,
+        num_randomizations=1,
+        plan_horizon=0.5,
+        spline_type="cubic",
         num_knots=4,
     )
 elif args.algorithm == "cmaes":

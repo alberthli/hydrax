@@ -31,8 +31,10 @@ class CEM(SamplingBasedController):
         task: Task,
         num_samples: int,
         num_elites: int,
-        sigma_start: float,
-        sigma_min: float,
+        sigma_max: float,
+        sigma_min: float = 0.01,
+        use_noise_ramp: bool = False,
+        noise_ramp: bool = 4.0,
         num_randomizations: int = 1,
         risk_strategy: RiskStrategy = None,
         seed: int = 0,
@@ -46,8 +48,10 @@ class CEM(SamplingBasedController):
             task: The dynamics and cost for the system we want to control.
             num_samples: The number of control sequences to sample.
             num_elites: The number of elite samples to keep at each iteration.
-            sigma_start: The initial standard deviation for the controls.
+            sigma_max: The max (and initial) stdev for the controls.
             sigma_min: The minimum standard deviation for the controls.
+            use_noise_ramp: Whether to use a noise ramp for the covariance.
+            noise_ramp: The maximum value of the noise ramp.
             num_randomizations: The number of domain randomizations to use.
             risk_strategy: How to combining costs from different randomizations.
                            Defaults to average cost.
@@ -68,13 +72,15 @@ class CEM(SamplingBasedController):
         )
         self.num_samples = num_samples
         self.sigma_min = sigma_min
-        self.sigma_start = sigma_start
+        self.sigma_max = sigma_max
         self.num_elites = num_elites
+        self.use_noise_ramp = use_noise_ramp
+        self.noise_ramp = noise_ramp
 
     def init_params(self, seed: int = 0) -> CEMParams:
         """Initialize the policy parameters."""
         _params = super().init_params(seed)
-        cov = jnp.full_like(_params.mean, self.sigma_start)
+        cov = jnp.full_like(_params.mean, self.sigma_max)
         return CEMParams(
             tk=_params.tk, mean=_params.mean, cov=cov, rng=_params.rng
         )
@@ -108,7 +114,17 @@ class CEM(SamplingBasedController):
 
         # The new proposal distribution is a Gaussian fit to the elites.
         mean = jnp.mean(rollouts.knots[elites], axis=0)
-        cov = jnp.maximum(
-            jnp.std(rollouts.knots[elites], axis=0), self.sigma_min
+
+        # We use noise ramping, which anneals the noise from high to low
+        ramp = jnp.linspace(
+            self.noise_ramp / self.num_knots,
+            self.noise_ramp,
+            self.num_knots,
+        )
+        cov = jnp.std(rollouts.knots[elites], axis=0)
+        cov = jnp.where(
+            self.use_noise_ramp,
+            jnp.clip(cov, self.sigma_min, self.sigma_max) * ramp[:, None],
+            jnp.clip(cov, self.sigma_min, self.sigma_max),
         )
         return params.replace(mean=mean, cov=cov)
