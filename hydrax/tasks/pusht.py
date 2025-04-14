@@ -6,7 +6,7 @@ import mujoco
 from mujoco import mjx
 
 from hydrax import ROOT
-from hydrax.task_base import Task
+from hydrax.task_base import CostMetadata, Task
 
 
 class PushT(Task):
@@ -46,7 +46,11 @@ class PushT(Task):
         return block_pos - pusher_pos
 
     def running_cost(
-        self, state: mjx.Data, control: jax.Array, params: Any
+        self,
+        state: mjx.Data,
+        control: jax.Array,
+        params: Any,
+        metadata: CostMetadata,
     ) -> jax.Array:
         """The running cost ℓ(xₜ, uₜ)."""
         position_err = self._get_position_err(state)
@@ -59,7 +63,9 @@ class PushT(Task):
 
         return position_cost + orientation_cost + 0.01 * close_to_block_cost
 
-    def terminal_cost(self, state: mjx.Data, params: Any) -> jax.Array:
+    def terminal_cost(
+        self, state: mjx.Data, params: Any, metadata: CostMetadata
+    ) -> jax.Array:
         """The terminal cost ℓ_T(x_T)."""
         return self.running_cost(state, jnp.zeros(self.model.nu))
 

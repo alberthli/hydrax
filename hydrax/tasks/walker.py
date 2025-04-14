@@ -6,7 +6,7 @@ import mujoco
 from mujoco import mjx
 
 from hydrax import ROOT
-from hydrax.task_base import Task
+from hydrax.task_base import CostMetadata, Task
 
 
 class Walker(Task):
@@ -51,14 +51,20 @@ class Walker(Task):
         return state.sensordata[sensor_adr + 2] - 1.0
 
     def running_cost(
-        self, state: mjx.Data, control: jax.Array, params: Any
+        self,
+        state: mjx.Data,
+        control: jax.Array,
+        params: Any,
+        metadata: CostMetadata,
     ) -> jax.Array:
         """The running cost ℓ(xₜ, uₜ)."""
         state_cost = self.terminal_cost(state)
         control_cost = jnp.sum(jnp.square(control))
         return state_cost + 0.1 * control_cost
 
-    def terminal_cost(self, state: mjx.Data, params: Any) -> jax.Array:
+    def terminal_cost(
+        self, state: mjx.Data, params: Any, metadata: CostMetadata
+    ) -> jax.Array:
         """The terminal cost ϕ(x_T)."""
         height_cost = jnp.square(
             self._get_torso_height(state) - self.target_height

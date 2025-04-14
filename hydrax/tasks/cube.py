@@ -6,7 +6,7 @@ import mujoco
 from mujoco import mjx
 
 from hydrax import ROOT
-from hydrax.task_base import Task
+from hydrax.task_base import CostMetadata, Task
 
 
 class CubeRotation(Task):
@@ -46,7 +46,11 @@ class CubeRotation(Task):
         return mjx._src.math.quat_sub(cube_quat, goal_quat)
 
     def running_cost(
-        self, state: mjx.Data, control: jax.Array, params: Any
+        self,
+        state: mjx.Data,
+        control: jax.Array,
+        params: Any,
+        metadata: CostMetadata,
     ) -> jax.Array:
         """The running cost ℓ(xₜ, uₜ)."""
         position_err = self._get_cube_position_err(state)
@@ -62,7 +66,9 @@ class CubeRotation(Task):
 
         return position_cost + orientation_cost + grasp_cost
 
-    def terminal_cost(self, state: mjx.Data, params: Any) -> jax.Array:
+    def terminal_cost(
+        self, state: mjx.Data, params: Any, metadata: CostMetadata
+    ) -> jax.Array:
         """The terminal cost ϕ(x_T)."""
         position_err = self._get_cube_position_err(state)
         return 100 * jnp.sum(jnp.square(position_err))

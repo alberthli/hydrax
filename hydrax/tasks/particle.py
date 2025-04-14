@@ -6,7 +6,7 @@ import mujoco
 from mujoco import mjx
 
 from hydrax import ROOT
-from hydrax.task_base import Task
+from hydrax.task_base import CostMetadata, Task
 
 
 class Particle(Task):
@@ -21,14 +21,20 @@ class Particle(Task):
         self.pointmass_id = mj_model.site("pointmass").id
 
     def running_cost(
-        self, state: mjx.Data, control: jax.Array, params: Any
+        self,
+        state: mjx.Data,
+        control: jax.Array,
+        params: Any,
+        metadata: CostMetadata,
     ) -> jax.Array:
         """The running cost ℓ(xₜ, uₜ) encourages target tracking."""
         state_cost = self.terminal_cost(state)
         control_cost = jnp.sum(jnp.square(control))
         return state_cost + 0.1 * control_cost
 
-    def terminal_cost(self, state: mjx.Data, params: Any) -> jax.Array:
+    def terminal_cost(
+        self, state: mjx.Data, params: Any, metadata: CostMetadata
+    ) -> jax.Array:
         """The terminal cost ϕ(x_T)."""
         position_cost = jnp.sum(
             jnp.square(state.site_xpos[self.pointmass_id] - state.mocap_pos[0])

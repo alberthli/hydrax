@@ -8,7 +8,7 @@ from huggingface_hub import hf_hub_download
 from mujoco import mjx
 
 from hydrax import ROOT
-from hydrax.task_base import Task
+from hydrax.task_base import CostMetadata, Task
 
 
 class HumanoidMocap(Task):
@@ -60,7 +60,11 @@ class HumanoidMocap(Task):
         return self.reference[i, :]
 
     def running_cost(
-        self, state: mjx.Data, control: jax.Array, params: Any
+        self,
+        state: mjx.Data,
+        control: jax.Array,
+        params: Any,
+        metadata: CostMetadata,
     ) -> jax.Array:
         """The running cost ℓ(xₜ, uₜ)."""
         # Configuration error weighs the base pose more heavily
@@ -76,7 +80,9 @@ class HumanoidMocap(Task):
 
         return 1.0 * configuration_cost + 1.0 * control_cost
 
-    def terminal_cost(self, state: mjx.Data, params: Any) -> jax.Array:
+    def terminal_cost(
+        self, state: mjx.Data, params: Any, metadata: CostMetadata
+    ) -> jax.Array:
         """The terminal cost ϕ(x_T)."""
         q_ref = self._get_reference_configuration(state.time)
         q = state.qpos

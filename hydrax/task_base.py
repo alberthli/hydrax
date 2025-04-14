@@ -1,10 +1,16 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any, Dict, Sequence
 
 import jax
 import jax.numpy as jnp
 import mujoco
 from mujoco import MjData, MjModel, mjx
+
+
+@dataclass
+class CostMetadata:
+    """Metadata for the cost function."""
 
 
 class Task(ABC):
@@ -60,7 +66,11 @@ class Task(ABC):
 
     @abstractmethod
     def running_cost(
-        self, state: mjx.Data, control: jax.Array, params: Any
+        self,
+        state: mjx.Data,
+        control: jax.Array,
+        params: Any,
+        metadata: CostMetadata,
     ) -> jax.Array:
         """The running cost ℓ(xₜ, uₜ).
 
@@ -68,18 +78,22 @@ class Task(ABC):
             state: The current state xₜ.
             control: The control action uₜ.
             params: The policy params.
+            metadata: Metadata for the cost function.
 
         Returns:
             The scalar running cost ℓ(xₜ, uₜ)
         """
 
     @abstractmethod
-    def terminal_cost(self, state: mjx.Data, params: Any) -> jax.Array:
+    def terminal_cost(
+        self, state: mjx.Data, params: Any, metadata: CostMetadata
+    ) -> jax.Array:
         """The terminal cost ϕ(x_T).
 
         Args:
             state: The final state x_T.
             params: The policy params.
+            metadata: Metadata for the cost function.
 
         Returns:
             The scalar terminal cost ϕ(x_T).
@@ -136,6 +150,14 @@ class Task(ABC):
             A dictionary of randomized data elements.
         """
         return {}
+
+    def compute_cost_metadata(self, state: mjx.Data) -> CostMetadata:
+        """Computes cost metadata for the current state.
+
+        For example, this function could compute spline parameters used for
+        tracking-based costs.
+        """
+        return CostMetadata()
 
     def pre_optimize(self, state: mjx.Data, params: Any) -> None:
         """Hook for pre-optimization processing."""

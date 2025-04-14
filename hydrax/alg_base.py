@@ -246,6 +246,7 @@ class SamplingBasedController(ABC):
             The states (stacked) experienced during the rollouts.
             A Trajectory object containing the control, costs, and trace sites.
         """
+        metadata = self.task.compute_cost_metadata(state)
 
         def _scan_fn(
             x: mjx.Data, u: jax.Array
@@ -253,14 +254,14 @@ class SamplingBasedController(ABC):
             """Compute the cost and observation, then advance the state."""
             x = x.replace(ctrl=u)
             x = mjx.step(model, x)  # step model + compute site positions
-            cost = self.dt * self.task.running_cost(x, u, params)
+            cost = self.dt * self.task.running_cost(x, u, params, metadata)
             sites = self.task.get_trace_sites(x)
             return x, (x, cost, sites)
 
         final_state, (states, costs, trace_sites) = jax.lax.scan(
             _scan_fn, state, controls
         )
-        final_cost = self.task.terminal_cost(final_state, params)
+        final_cost = self.task.terminal_cost(final_state, params, metadata)
         final_trace_sites = self.task.get_trace_sites(final_state)
 
         costs = jnp.append(costs, final_cost)

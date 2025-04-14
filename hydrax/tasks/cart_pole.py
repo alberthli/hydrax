@@ -6,7 +6,7 @@ import mujoco
 from mujoco import mjx
 
 from hydrax import ROOT
-from hydrax.task_base import Task
+from hydrax.task_base import CostMetadata, Task
 
 
 class CartPole(Task):
@@ -26,7 +26,11 @@ class CartPole(Task):
         return jnp.sum(jnp.square(theta_err))
 
     def running_cost(
-        self, state: mjx.Data, control: jax.Array, params: Any
+        self,
+        state: mjx.Data,
+        control: jax.Array,
+        params: Any,
+        metadata: CostMetadata,
     ) -> jax.Array:
         """The running cost ℓ(xₜ, uₜ)."""
         theta_cost = self._distance_to_upright(state)
@@ -35,7 +39,9 @@ class CartPole(Task):
         control_cost = 0.01 * jnp.sum(jnp.square(control))
         return theta_cost + centering_cost + velocity_cost + control_cost
 
-    def terminal_cost(self, state: mjx.Data, params: Any) -> jax.Array:
+    def terminal_cost(
+        self, state: mjx.Data, params: Any, metadata: CostMetadata
+    ) -> jax.Array:
         """The terminal cost ϕ(x_T)."""
         theta_cost = 10 * self._distance_to_upright(state)
         centering_cost = jnp.sum(jnp.square(state.qpos[0]))
