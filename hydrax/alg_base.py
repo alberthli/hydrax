@@ -26,6 +26,8 @@ class Trajectory:
             We expect this to be reduced in the controller by a risk strategy.
         trace_sites: Positions of trace sites of shape (num_rollouts, H+1, 3).
         x0: Initial state of shape (nq + nv,). NOT required for the controller.
+        xs: Trajectory of randomized states AFTER x0. NOT required for the
+            controller. Shape=(num_randomizations, num_rollouts, H+1, nq + nv).
         mocap0: Initial mocap positions and quaternions. Not required for the
             controller. Shape=(num_randomizations, num_rollouts, num_mocap, 7).
     """
@@ -35,6 +37,7 @@ class Trajectory:
     costs: jax.Array
     trace_sites: jax.Array
     x0: jax.Array
+    xs: jax.Array
     mocap0: jax.Array
 
     def __len__(self):
@@ -273,6 +276,7 @@ class SamplingBasedController(ABC):
         mocap0 = jnp.concatenate(
             [state.mocap_pos, state.mocap_quat], axis=-1
         )  # (num_mocap, 7)
+        xs = jnp.concatenate([states.qpos, states.qvel], axis=-1)
 
         return states, Trajectory(
             controls=controls,
@@ -281,6 +285,7 @@ class SamplingBasedController(ABC):
             trace_sites=trace_sites,
             x0=x0,
             mocap0=mocap0,
+            xs=xs,
         )
 
     def init_params(self, seed: int = 0) -> Any:
