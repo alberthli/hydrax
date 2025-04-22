@@ -176,7 +176,9 @@ class Task(ABC):
         """
         return None
 
-    def post_rollout(self, states: mjx.Data, costs: jax.Array) -> jax.Array:
+    def post_rollout(
+        self, states: mjx.Data, final_state: mjx.Data, costs: jax.Array
+    ) -> jax.Array:
         """A hook for post-rollout processing.
 
         This method is called after eval rollout is completed, and can be used
@@ -187,6 +189,7 @@ class Task(ABC):
 
         Args:
             states: The states of the system during the rollout.
+            final_state: The final state of the system after the rollout.
             costs: The costs incurred during the rollout of length H+1.
 
         Returns:

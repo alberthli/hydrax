@@ -271,7 +271,7 @@ class SamplingBasedController(ABC):
         trace_sites = jnp.append(trace_sites, final_trace_sites[None], axis=0)
 
         # entrypoint to do cost adjustments based on the entire rollout
-        costs = self.task.post_rollout(states, costs)
+        costs = self.task.post_rollout(states, final_state, costs)
 
         # NOT required for the controller
         # TODO: consider bagging out the x trajectory too
