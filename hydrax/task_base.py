@@ -175,3 +175,21 @@ class Task(ABC):
             mj_data: The MuJoCo data object.
         """
         return None
+
+    def post_rollout(self, states: mjx.Data, costs: jax.Array) -> jax.Array:
+        """A hook for post-rollout processing.
+
+        This method is called after eval rollout is completed, and can be used
+        to update costs based on the outcome of the entire rollout, rather than
+        just local stage/terminal costs.
+
+        By default, returns the costs unchanged.
+
+        Args:
+            states: The states of the system during the rollout.
+            costs: The costs incurred during the rollout of length H+1.
+
+        Returns:
+            The adjusted costs.
+        """
+        return costs

@@ -212,7 +212,7 @@ class SamplingBasedController(ABC):
         x0 = jnp.concatenate([state.qpos, state.qvel])  # (nq + nv,)
         mocap0 = jnp.concatenate(
             [state.mocap_pos, state.mocap_quat], axis=-1
-        )  # (num_randomizations, num_rollouts, num_mocap, 7)
+        )  # (num_mocap, 7)
 
         # data strictly necessary for running the stack
         controls = rollouts.controls[0]  # identical over randomizations
@@ -269,6 +269,9 @@ class SamplingBasedController(ABC):
 
         costs = jnp.append(costs, final_cost)
         trace_sites = jnp.append(trace_sites, final_trace_sites[None], axis=0)
+
+        # entrypoint to do cost adjustments based on the entire rollout
+        costs = self.task.post_rollout(states, costs)
 
         # NOT required for the controller
         # TODO: consider bagging out the x trajectory too
